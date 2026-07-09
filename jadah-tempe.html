@@ -169,25 +169,19 @@ nav a:focus-visible{outline:2px solid var(--bacem);outline-offset:4px;border-rad
 }
 @keyframes spinSlow{to{transform:rotate(360deg)}}
 .spinner{
-  width:min(64vw,470px);cursor:grab;user-select:none;
-  transform-style:preserve-3d;will-change:transform;position:relative;
+  width:min(64vw,470px);user-select:none;position:relative;
+  transform-style:preserve-3d;will-change:transform;
+  transition:transform .5s cubic-bezier(.22,.61,.36,1);
 }
-.spinner.grabbing{cursor:grabbing}
-.spinner img{width:100%;height:auto;display:block;pointer-events:none;
-  filter:drop-shadow(0 40px 40px rgba(42,63,36,.4))}
-.spinner.idle{animation:idleSpin 16s linear infinite}
-@keyframes idleSpin{from{transform:rotateX(10deg) rotateZ(0)}to{transform:rotateX(10deg) rotateZ(360deg)}}
-.hint{
-  position:relative;z-index:3;margin-top:1.8rem;
-  display:inline-flex;align-items:center;gap:.55rem;
-  padding:.6rem 1.3rem;border-radius:100px;
-  background:#33512f;color:#f3ecd6;
-  font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;font-weight:600;
-  box-shadow:0 10px 24px rgba(42,63,36,.3);
-  animation:riseIn 1s 1.4s both;
+.spinner img{
+  width:100%;height:auto;display:block;pointer-events:none;
+  filter:drop-shadow(0 40px 40px rgba(42,63,36,.4));
+  animation:floatSoft 6s ease-in-out infinite;
 }
-.hint svg{animation:wiggle 2.4s ease-in-out infinite}
-@keyframes wiggle{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+@keyframes floatSoft{
+  0%,100%{transform:translateY(0) rotate(-.8deg)}
+  50%{transform:translateY(-14px) rotate(.8deg)}
+}
 
 /* daun jatuh + capung */
 .leaf{position:absolute;z-index:4;opacity:0;pointer-events:none;animation:leafFloat var(--t,14s) var(--d,0s) ease-in-out infinite}
@@ -390,15 +384,10 @@ footer small{color:#b9c8ae;font-size:.75rem;letter-spacing:.06em}
 
   <div class="stage" id="stage">
     <div class="tampah-ring" aria-hidden="true"></div>
-    <div class="spinner idle" id="spinner">
+    <div class="spinner" id="spinner">
       <img src="jadah%20tempe.png" alt="Sepiring jadah tempe di atas daun pisang" draggable="false">
     </div>
   </div>
-
-  <span class="hint">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg>
-    Seret untuk memutar
-  </span>
 </header>
 
 <!-- gelombang menuju hijau daun -->
@@ -443,7 +432,7 @@ footer small{color:#b9c8ae;font-size:.75rem;letter-spacing:.06em}
   <div class="cards">
     <div class="card jd reveal d1">
       <span class="tag">Lapis Atas</span>
-      <img class="card-img" src="jadah%20tempe.png" alt="Jadah ketan tumbuk">
+      <img class="card-img" src="jadah.png" alt="Jadah ketan tumbuk">
       <h3>Jadah</h3>
       <p>Beras ketan dikukus, lalu ditumbuk dengan kelapa parut dan sejumput garam.
       Hasilnya padat namun lembut — gurih samar yang menjadi kanvas bagi rasa manis di bawahnya.
@@ -452,6 +441,7 @@ footer small{color:#b9c8ae;font-size:.75rem;letter-spacing:.06em}
     </div>
     <div class="card tp reveal d2">
       <span class="tag">Lapis Bawah</span>
+      <img class="card-img" src="tempe.png" alt="Tempe bacem">
       <h3>Tempe Bacem</h3>
       <p>Tempe direndam dan direbus lama dalam air kelapa, gula jawa, bawang, ketumbar,
       dan daun salam, kemudian digoreng sebentar. Manis-gurih yang dalam, dengan aroma
@@ -547,99 +537,18 @@ if(!reduce){
   }
 }
 
-/* =========================================================
-   PUTAR INTERAKTIF — seret, inersia, tilt hover, idle spin
-   ========================================================= */
+/* tilt halus mengikuti kursor — gerak lembut, tanpa putar */
 const stage   = document.getElementById('stage');
 const spinner = document.getElementById('spinner');
-
-let rotZ=0, tiltX=10, vel=0, dragging=false, lastX=0, lastT=0;
-let idleTimer=null, rafId=null, hoverTX=0, hoverTY=0;
-
-function apply(){
-  spinner.style.transform =
-    `rotateX(${tiltX + hoverTY}deg) rotateY(${hoverTX}deg) rotateZ(${rotZ}deg)`;
-}
-function stopIdle(){
-  if(spinner.classList.contains('idle')){
-    const m=getComputedStyle(spinner).transform;
-    if(m && m!=='none'){
-      const v=new DOMMatrix(m);
-      rotZ=Math.atan2(v.b,v.a)*180/Math.PI;
-    }
-    spinner.classList.remove('idle');
-    apply();
-  }
-  clearTimeout(idleTimer);
-}
-function scheduleIdle(){
-  clearTimeout(idleTimer);
-  if(reduce) return;
-  idleTimer=setTimeout(()=>{ vel=0.32; momentum(); },3500);
-}
-function momentum(){
-  cancelAnimationFrame(rafId);
-  const tick=()=>{
-    if(dragging) return;
-    rotZ+=vel; vel*=0.965; apply();
-    if(Math.abs(vel)>0.02){ rafId=requestAnimationFrame(tick); }
-    else{ scheduleIdle(); }
-  };
-  rafId=requestAnimationFrame(tick);
-}
-function startDrag(x){
-  stopIdle(); cancelAnimationFrame(rafId);
-  dragging=true; spinner.classList.add('grabbing');
-  lastX=x; lastT=performance.now(); vel=0;
-}
-function moveDrag(x){
-  if(!dragging) return;
-  const now=performance.now();
-  const dx=x-lastX;
-  rotZ+=dx*0.45;
-  vel=(dx*0.45)/Math.max(now-lastT,1)*16;
-  lastX=x; lastT=now;
-  apply();
-}
-function endDrag(){
-  if(!dragging) return;
-  dragging=false; spinner.classList.remove('grabbing');
-  momentum();
-}
-stage.addEventListener('pointerdown',e=>{stage.setPointerCapture(e.pointerId);startDrag(e.clientX)});
-stage.addEventListener('pointermove',e=>moveDrag(e.clientX));
-stage.addEventListener('pointerup',endDrag);
-stage.addEventListener('pointercancel',endDrag);
-
-/* tilt halus saat hover (desktop) */
 if(!reduce && matchMedia('(hover:hover)').matches){
   stage.addEventListener('mousemove',e=>{
-    if(dragging) return;
     const r=stage.getBoundingClientRect();
-    hoverTX=((e.clientX-r.left)/r.width-.5)*14;
-    hoverTY=-((e.clientY-r.top)/r.height-.5)*10;
-    if(!spinner.classList.contains('idle')) apply();
+    const tx=((e.clientX-r.left)/r.width-.5)*6;   // maks 6deg
+    const ty=-((e.clientY-r.top)/r.height-.5)*5;
+    spinner.style.transform=`rotateY(${tx}deg) rotateX(${ty}deg)`;
   });
-  stage.addEventListener('mouseleave',()=>{
-    hoverTX=0;hoverTY=0;
-    if(!spinner.classList.contains('idle')) apply();
-  });
+  stage.addEventListener('mouseleave',()=>{spinner.style.transform=''});
 }
-
-/* akses keyboard */
-stage.tabIndex=0;
-stage.setAttribute('role','img');
-stage.setAttribute('aria-label','Jadah tempe interaktif — gunakan panah kiri/kanan untuk memutar');
-stage.style.outline='none';
-stage.addEventListener('keydown',e=>{
-  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
-    stopIdle();
-    rotZ+=e.key==='ArrowRight'?12:-12;
-    apply(); scheduleIdle();
-    e.preventDefault();
-  }
-});
-if(reduce){spinner.classList.remove('idle');tiltX=0;apply();}
 
 /* scroll reveal */
 const io=new IntersectionObserver(es=>es.forEach(en=>{
