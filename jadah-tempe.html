@@ -252,13 +252,18 @@ p.lead{max-width:56ch;font-size:clamp(.98rem,1.35vw,1.12rem);line-height:1.85;fo
 .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:1.6rem;max-width:1080px;margin:2.8rem auto 0;text-align:left}
 .card{
   border-radius:28px;padding:2.4rem 2.2rem;position:relative;overflow:hidden;
-  border:1px solid rgba(154,106,61,.28);color:var(--ink);
   transition:transform .5s cubic-bezier(.2,.7,.3,1);
 }
 .card:hover{transform:translateY(-8px) rotate(-.4deg)}
+.card.jd{background:#efe4c6;color:var(--ink)}      /* ketan krem */
+.card.tp{background:#7a4118;color:#fbeed8}          /* bacem cokelat */
 .card h3{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:540;margin-bottom:.7rem}
-.card p{font-size:.95rem;line-height:1.8;font-weight:300;color:#5b543f}
-.card .tag{position:absolute;top:1.4rem;right:1.4rem;font-size:.6rem;letter-spacing:.26em;text-transform:uppercase;font-weight:700;opacity:.75;color:var(--bacem)}
+.card p{font-size:.95rem;line-height:1.8;font-weight:300}
+.card.jd p{color:#5b543f}
+.card.tp p{color:#f4e3c8}
+.card.jd .tag{color:var(--bacem)}
+.card.tp .tag{color:#f0c98b}
+.card .tag{position:absolute;top:1.4rem;right:1.4rem;font-size:.6rem;letter-spacing:.26em;text-transform:uppercase;font-weight:700;opacity:.85}
 .card-img{
   width:100%;aspect-ratio:16/10;object-fit:contain;
   margin-bottom:1.4rem;display:block;
